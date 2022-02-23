@@ -1,3 +1,4 @@
+from os import stat
 import numpy as np
 import sys
 sys.path.append("..")
@@ -13,5 +14,14 @@ class KinematicModelDifferentialDrive(KinematicModel):
     
     def step(self, state:State, cstate:ControlState) -> State:
         # TODO: Differential Drive Kinematic Model
-        state_next = state
+        x1dot = self.r * np.deg2rad(cstate.rw) / 2
+        w1 = np.deg2rad(self.r * np.deg2rad(cstate.rw) / (2 * self.l))
+        x2dot = self.r * np.deg2rad(cstate.lw) / 2
+        w2 = np.deg2rad(self.r * np.deg2rad(cstate.lw) / (2 * self.l))
+        v = x1dot + x2dot
+        w = w1 - w2
+        x = state.x + v * np.cos(np.deg2rad(state.yaw)) * self.dt
+        y = state.y + v * np.sin(np.deg2rad(state.yaw)) * self.dt
+        yaw = (state.yaw + w * self.dt) % 360
+        state_next = State(w, y, yaw, v, w)
         return state_next

@@ -32,6 +32,13 @@ class ControllerPIDBasic(Controller):
         target = self.path[min_idx]
         
         # TODO: PID Control for Basic Kinematic Model 
-        next_w = 0
+        min_idx, min_dist = utils.search_nearest(self.path, (x, y))
+        target = self.path[min_idx]
+        ang = np.arctan2(self.path[min_idx, 1] - y, self.path[min_idx, 0] - x)
+        ep = min_dist * np.sin(ang)
+        self.acc_ep += dt * ep
+        diff_ep = (ep - self.last_ep) / dt
+        next_w = self.kp * ep + self.ki * self.acc_ep + self.kd * diff_ep
+        self.last_ep = ep
         return next_w, target
 
