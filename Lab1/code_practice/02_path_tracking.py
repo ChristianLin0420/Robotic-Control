@@ -117,7 +117,7 @@ if __name__ == "__main__":
             }
             next_w, target = controller.feedback(info)
             # : v,w to motor control
-            r = simulator.wu/2
+            r = simulator.wu / 2
             next_lw = 0
             next_rw = 0
             command = ControlState("diff_drive", next_lw, next_rw)

@@ -5,7 +5,7 @@ import PathTracking.utils as utils
 from PathTracking.controller import Controller
 
 class ControllerPurePursuitBasic(Controller):
-    def __init__(self, kp=1, Lfc=10):
+    def __init__(self, kp=1.1, Lfc=10):
         self.path = None
         self.kp = kp
         self.Lfc = Lfc
@@ -21,15 +21,18 @@ class ControllerPurePursuitBasic(Controller):
 
         # Search Front Target
         min_idx, min_dist = utils.search_nearest(self.path, (x,y))
-        Ld = self.kp*v + self.Lfc
+        Ld = self.kp * v + self.Lfc
         target_idx = min_idx
+
         for i in range(min_idx,len(self.path)-1):
-            dist = np.sqrt((self.path[i+1,0]-x)**2 + (self.path[i+1,1]-y)**2)
+            dist = np.sqrt((self.path[i + 1, 0] - x) ** 2 + (self.path[i + 1, 1] - y) ** 2)
             if dist > Ld:
                 target_idx = i
                 break
+
         target = self.path[target_idx]
 
         # TODO: Pure Pursuit Control for Basic Kinematic Model
-        next_w = 0
+        ang = np.arctan2(self.path[target_idx, 1] - y, self.path[target_idx, 0] - x) - np.deg2rad(yaw)
+        next_w = np.rad2deg(2 * v * np.sin(ang) / Ld)
         return next_w, target

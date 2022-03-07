@@ -27,5 +27,16 @@ class ControllerStanleyBicycle(Controller):
         target = self.path[min_idx]
 
         # TODO: Stanley Control for Bicycle Kinematic Model
-        next_delta = 0
+        delta = target[2]
+        theta_e = (delta - yaw) % 360
+        
+        if theta_e > 180:
+            theta_e -= 360
+        
+        e = [front_x - target[0], front_y - target[1]]
+        p = [np.cos(np.deg2rad(theta_e + 90)), np.sin(np.deg2rad(theta_e + 90))]
+        error = np.dot(e, p)
+
+        next_delta = np.rad2deg(np.arctan2(-self.kp * error, vf)) + theta_e
+
         return next_delta, target

@@ -48,5 +48,40 @@ class ControllerLQRBicycle(Controller):
         target[2] = utils.angle_norm(target[2])
         
         # TODO: LQR Control for Bicycle Kinematic Model
-        next_delta = 0
+        front_x = x + l * np.cos(np.deg2rad(yaw))
+        front_y = y + l * np.sin(np.deg2rad(yaw))
+        vf = v / np.cos(np.deg2rad(delta))
+
+        theta_p = target[2]
+        theta_e = (theta_p - yaw) % 360
+        
+        if theta_e > 180:
+            theta_e -= 360
+        
+        e = [front_x - target[0], front_y - target[1]]
+        p = [np.cos(np.deg2rad(theta_e + 90)), np.sin(np.deg2rad(theta_e + 90))]
+        error = np.dot(e, p)
+        e_dot = vf * np.sin(np.deg2rad(delta - theta_e))
+        theta_dot = v * np.tan(np.deg2rad(delta)) / l
+
+        A = np.array([[1, dt, 0, 0], [0, 0, v, 0], [0, 0, 1, dt], [0, 0, 0, 0]])
+        B = np.array([[0], [0], [0], [v / info["l"]]])
+        x = np.array([[error], [e_dot], [yaw], [theta_dot]])
+
+        # print("error: {}".format(error))
+        # print("e_dot: {}".format(e_dot))
+        # print("yaw: {}".format(yaw))
+        # print("theta_dot: {}".format(theta_dot))
+
+        # print(A.shape)
+        # print(B.shape)
+        # print(self.R.shape)
+        # print(self.Q.shape)
+
+        P = self._solve_DARE(A, B, self.Q, self.R)
+        tmp = -np.linalg.inv(self.R + B.T @ P @ B)
+        next_delta = np.rad2deg(tmp @ B.T @ P @ A @ x)
+
+        print("next_delta: {}".format(next_delta))
+
         return next_delta, target
