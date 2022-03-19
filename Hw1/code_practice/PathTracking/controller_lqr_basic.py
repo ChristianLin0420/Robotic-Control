@@ -48,5 +48,28 @@ class ControllerLQRBasic(Controller):
         target[2] = utils.angle_norm(target[2])
         
         # TODO: LQR Control for Basic Kinematic Model
-        next_w = 0
+        theta_p = target[2]
+        theta_e = (yaw - theta_p) % 360
+        
+        if theta_e > 180:
+            theta_e -= 360
+        
+        # l = info["l"]
+        e = [x - target[0], y - target[1]]
+        error = np.hypot(e[0], e[1]) # np.dot(e, p)
+        e_dot = (error - self.pe) / dt
+        theta_dot = (theta_e - self.pth_e) / dt
+
+        A = np.array([[1, dt, 0, 0], [0, 0, v, 0], [0, 0, 1, dt], [0, 0, 0, 0]])
+        B = np.array([[0], [0], [0], [v]])
+        x = np.array([[error], [e_dot], [theta_e], [theta_dot]])
+
+        self.pe = error
+        self.pth_e = theta_e
+
+        P = self._solve_DARE(A, B, self.Q, self.R)
+        tmp = np.linalg.inv(self.R + B.T @ P @ B)
+        next_w = tmp @ B.T @ P @ A @ x
+        next_w = -np.rad2deg(next_w[0][0])
+        
         return next_w, target
