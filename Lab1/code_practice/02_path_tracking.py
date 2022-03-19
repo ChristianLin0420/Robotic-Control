@@ -118,8 +118,8 @@ if __name__ == "__main__":
             next_w, target = controller.feedback(info)
             # : v,w to motor control
             r = simulator.wu / 2
-            next_lw = 0
-            next_rw = 0
+            next_lw = np.rad2deg((next_v / r) - (np.deg2rad(next_w) * simulator.l / r))
+            next_rw = np.rad2deg((next_v / r) + (np.deg2rad(next_w) * simulator.l / r))
             command = ControlState("diff_drive", next_lw, next_rw)
         elif args.simulator == "bicycle":
             # Longitude (P Control)
@@ -150,7 +150,7 @@ if __name__ == "__main__":
         cv2.imshow("Path Tracking Test", img)
         k = cv2.waitKey(1)
         if k == ord('r'):
-            simulator.init_state(start)
+            simulator.init_pose(start)
         if k == 27:
             print()
             break

@@ -61,7 +61,7 @@ class SimulatorDifferentialDrive(Simulator):
 
         # Control Constrain
         if self.cstate.lw > self.lw_range:
-            self.lw = self.lw_range
+            self.cstate.lw = self.lw_range
         elif self.cstate.lw < -self.lw_range:
             self.cstate.lw = -self.lw_range
         if self.cstate.rw > self.rw_range:

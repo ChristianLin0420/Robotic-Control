@@ -30,11 +30,13 @@ class ControllerPIDBasic(Controller):
         # Search Nesrest Target
         min_idx, min_dist = utils.search_nearest(self.path, (x,y))
         target = self.path[min_idx]
+
+        def normalize(rad):
+            return (rad + np.pi) % (2 * np.pi) - np.pi
         
         # TODO: PID Control for Basic Kinematic Model 
-        min_idx, min_dist = utils.search_nearest(self.path, (x, y))
-        target = self.path[min_idx]
-        ang = np.arctan2(self.path[min_idx, 1] - y, self.path[min_idx, 0] - x)
+        yaw = normalize(np.deg2rad(info["yaw"]))
+        ang = normalize(np.arctan2(self.path[min_idx, 1] - y, self.path[min_idx, 0] - yaw))
         ep = min_dist * np.sin(ang)
         self.acc_ep += dt * ep
         diff_ep = (ep - self.last_ep) / dt
