@@ -64,17 +64,61 @@ def navigation(args, simulator, controller, planner, start_pose=(100,200,0)):
 
         if path is not None and collision_count == 0:
             # TODO: Planning and Controlling
+            end_dist = np.hypot(path[-1,0]-simulator.state.x, path[-1,1]-simulator.state.y)
+
             if args.simulator == "basic":
-                next_v = 0
-                next_w = 0
+                if end_dist > 10:
+                    next_v = 20
+                else:
+                    next_v = 0
+                # Lateral
+                info = {
+                    "x":simulator.state.x, 
+                    "y":simulator.state.y, 
+                    "yaw":simulator.state.yaw, 
+                    "v":simulator.state.v, 
+                    "dt":simulator.dt
+                }
+                next_w, _ = controller.feedback(info)
                 command = ControlState("basic", next_v, next_w)
             elif args.simulator == "diff_drive":
-                next_lw = 0
-                next_rw = 0
+                # Longitude
+                if end_dist > 10:
+                    next_v = 20
+                else:
+                    next_v = 0
+                # Lateral
+                info = {
+                    "x":simulator.state.x, 
+                    "y":simulator.state.y, 
+                    "yaw":simulator.state.yaw, 
+                    "v":simulator.state.v, 
+                    "dt":simulator.dt
+                }
+                next_w, _ = controller.feedback(info)
+                # : v,w to motor control
+                r = simulator.wu / 2
+                next_lw = np.rad2deg((next_v / r) - (np.deg2rad(next_w) * simulator.l / r))
+                next_rw = np.rad2deg((next_v / r) + (np.deg2rad(next_w) * simulator.l / r))
                 command = ControlState("diff_drive", next_lw, next_rw)
             elif args.simulator == "bicycle":
-                next_a = 0
-                next_delta = 0
+                # Longitude (P Control)
+                if end_dist > 40:
+                    target_v = 20
+                else:
+                    target_v = 0
+                next_a = (target_v - simulator.state.v)*0.5
+                # Lateral
+                info = {
+                    "x":simulator.state.x, 
+                    "y":simulator.state.y, 
+                    "yaw":simulator.state.yaw, 
+                    "v":simulator.state.v,
+                    "delta":simulator.cstate.delta,
+                    "l":simulator.l, 
+                    "dt":simulator.dt
+                }
+                next_delta, _ = controller.feedback(info)
                 command = ControlState("bicycle", next_a, next_delta)
             else:
                 exit()            
@@ -82,12 +126,22 @@ def navigation(args, simulator, controller, planner, start_pose=(100,200,0)):
             command = None
 
         _, info = simulator.step(command)
+
         # Collision Handling
         if info["collision"]:
             collision_count = 1
         if collision_count > 0:
             # TODO: Collision Handling
-            pass
+            for _ in range(30):
+                if args.simulator == "basic":
+                    command = ControlState("basic", -next_v, -next_w)
+                elif args.simulator == "diff_drive":
+                    command = ControlState("diff_drive", -next_lw, -next_rw)
+                elif args.simulator == "bicycle":
+                    command = ControlState("bicycle", -next_a, -next_delta)
+                simulator.step(command)
+
+            collision_count = 0
         
         # Render Path
         img = simulator.render()

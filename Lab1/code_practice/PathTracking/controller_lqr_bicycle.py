@@ -46,8 +46,13 @@ class ControllerLQRBicycle(Controller):
         min_idx, min_dist = utils.search_nearest(self.path, (x,y))
         target = self.path[min_idx]
         target[2] = utils.angle_norm(target[2])
+
+        def normalize(rad):
+            return (rad + np.pi) % (2 * np.pi) - np.pi
         
         # TODO: LQR Control for Bicycle Kinematic Model
+        # yaw = normalize(yaw)
+        print("yaw: {}".format(yaw))
         front_x = x + l * np.cos(np.deg2rad(yaw))
         front_y = y + l * np.sin(np.deg2rad(yaw))
         vf = v / np.cos(np.deg2rad(delta))
@@ -67,16 +72,6 @@ class ControllerLQRBicycle(Controller):
         A = np.array([[1, dt, 0, 0], [0, 0, v, 0], [0, 0, 1, dt], [0, 0, 0, 0]])
         B = np.array([[0], [0], [0], [v / info["l"]]])
         x = np.array([[error], [e_dot], [yaw], [theta_dot]])
-
-        # print("error: {}".format(error))
-        # print("e_dot: {}".format(e_dot))
-        # print("yaw: {}".format(yaw))
-        # print("theta_dot: {}".format(theta_dot))
-
-        # print(A.shape)
-        # print(B.shape)
-        # print(self.R.shape)
-        # print(self.Q.shape)
 
         P = self._solve_DARE(A, B, self.Q, self.R)
         tmp = -np.linalg.inv(self.R + B.T @ P @ B)
